@@ -44,6 +44,7 @@ end
 [x,y,z] = ind2sub(M.dim,find(mask));
 X = [spm_get_data(V1,[x y z]'); spm_get_data(V2,[x y z]')]';
 X(isnan(X(:,1)),:) = []; % clean up if needed
+X(isnan(X(:,2)),:) = [];
 rP = sum(detrend(X(:,1),'constant').*detrend(X(:,2),'constant')) ./ ...
     (sum(detrend(X(:,1),'constant').^2).*sum(detrend(X(:,2),'constant').^2)).^(1/2);
 
