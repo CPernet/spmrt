@@ -14,6 +14,8 @@ function [W,B,Maps,Stats] = spmrt_corrgp(series1,series2,masks,threshold,covaria
 %
 % INPUT series1 series of image filename (see spm_select - e.g. A1 A2 A3)
 %       series2 series of image filename (see spm_select  - e.g. B1 B2 B3)
+%       --> series are for different subjects, for time series see
+%           spmrt_timeseries_corrgp
 %       masks series of image filename (see spm_select - e.g. M1 M2 M3)
 %           note it is expected that A1 B1 and M1 are from the same subject
 %       figout 1/0 (default) to get all correlation figures out
@@ -29,7 +31,7 @@ function [W,B,Maps,Stats] = spmrt_corrgp(series1,series2,masks,threshold,covaria
 %
 % Cyril Pernet
 % --------------------------------------------------------------------------
-% Copyright (C) spmup team 2017
+% Copyright (C) spmrt
 
 if nargin == 3
     threshold = 0;
@@ -50,7 +52,7 @@ end
 N = size(series1,1); W = nan(N,2); 
 for n=1:N
     fprintf('Computing within pairs correlations: pair %g/%g \n',n,N)
-    [W(n,1),W(n,2)]=spmrt_corr(series1(n,:),series2(n,:),masks(n,:),figout,threshold);
+    [W(n,1),W(n,2)]=spmrt_corr(series1(n,:),series2(n,:),masks(n,:),'both',figout,threshold);
 end
 
 %% make map
@@ -72,7 +74,7 @@ MP = NaN(N,N); MC = NaN(N,N);
 for n=1:length(combinations)
     fprintf('Computing between pairs correlations: pair %g/%g \n',n,length(combinations))    
     [MP(combinations(n,1),combinations(n,2)),MC(combinations(n,1),combinations(n,2))] = spmrt_corr(...
-        series1(combinations(n,1),:),series2(combinations(n,2),:),masks(combinations(n,1),:),figout,threshold);
+        series1(combinations(n,1),:),series2(combinations(n,2),:),masks(combinations(n,1),:),'both',figout,threshold);
     MP(combinations(n,2),combinations(n,1)) = MP(combinations(n,1),combinations(n,2));
     MC(combinations(n,2),combinations(n,1)) = MC(combinations(n,1),combinations(n,2));
 end
