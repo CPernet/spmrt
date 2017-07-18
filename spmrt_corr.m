@@ -1,9 +1,11 @@
-function [rP,rC]=spmrt_corr(image1,image2,mask,metric,figout,threshold)
+function [rP,rC,CIP,CIC]=spmrt_corr(image1,image2,mask,metric,figout,threshold,alpha_level)
 
 % Computes the Pearson (vector-wise) and concordance correlations
 % between image1 and image2 for data included in the mask
 %
-% FORMAT [rP,rC]=spmup_corr(image1,image1,metric',mask,threshold)
+% FORMAT [rP,rC,CIP,CIC]=spmup_corr(image1,image1,'both',mask,threshold,alpha_level)
+%        [rP,CIP]=spmup_corr(image1,image1,'Pearson',mask,threshold,alpha_level)
+%        [rC,CIC]=spmup_corr(image1,image1,'Concordance',mask,threshold,alpha_level)
 %
 % INPUT image1 is the filename of an image (see spm_select)
 %       image2 is the filename of an image (see spm_select)
@@ -11,9 +13,12 @@ function [rP,rC]=spmrt_corr(image1,image2,mask,metric,figout,threshold)
 %       metric is 'Pearson', 'Concordance', or 'both'
 %       figout 1/0 (default) to get correlation figure out
 %       threshold (optional) if mask is not binary, threshold to apply
+%       alpha_level is the level used to compute the confidence interval (default is 5%)
 %
 % OUTPUT rP is the Pearson correlation coefficient
 %        rC is the concordance correlation coefficient
+%        CIP is the 95% confidence interval of rP (if 0 not included then significant)
+%        CIC is the 95% confidence interval of rC (if 0 not included then significant)
 %
 % Concordance correlation is more useful for reliability because it estimates
 % how much variation from the 45 degree line we have (by using the cov)
@@ -24,36 +29,42 @@ function [rP,rC]=spmrt_corr(image1,image2,mask,metric,figout,threshold)
 % --------------------------------------------------------------------------
 % Copyright (C) spmrt 
 
-rP = [];
-rC = [];
+rP = []; CIP = [];
+rC = []; CIC = [];
+nboot = 1000; % a thousand bootstraps
 
 %% check inputs
 spm('defaults', 'FMRI');
-V1 = spm_vol(image1);
-V2 = spm_vol(image2);
-if any(V1.dim ~= V2.dim)
-    error('input images are of different dimensions')
-end
-
-M = spm_vol(mask);
-if any(M.dim ~= V1.dim)
-    error('mask and input image are of different dimensions')
-end
-mask = spm_read_vols(M);
-if exist('threshold','var')
-    mask = mask > threshold;
-end
+if nargin < 7; alpha_level = 5/100; end 
+if nargin < 5; figout = 0; end 
+if nargin < 4; metric = 'both'; end
 
 %% Get the data
-[x,y,z] = ind2sub(M.dim,find(mask));
-X = [spm_get_data(V1,[x y z]'); spm_get_data(V2,[x y z]')]';
-X(isnan(X(:,1)),:) = []; % clean up if needed
-X(isnan(X(:,2)),:) = [];
+if exist('threshold','var')
+    X = spmrt_getdata(image1,image2,mask,threshold);
+else
+    X = spmrt_getdata(image1,image2,mask);
+end
+n = size(X,1);
 
 %% Pearson correlation
 if strcmpi(metric,'Pearson') || strcmpi(metric,'Both')
     rP = sum(detrend(X(:,1),'constant').*detrend(X(:,2),'constant')) ./ ...
         (sum(detrend(X(:,1),'constant').^2).*sum(detrend(X(:,2),'constant').^2)).^(1/2);
+   
+    if nargout > 1
+        disp('computing Pearson''s CI')
+        table = randi(n,n,nboot); 
+        for b=1:nboot
+            rPB(b) = sum(detrend(X(table(:,b),1),'constant').*detrend(X(table(:,b),2),'constant')) ./ ...
+                (sum(detrend(X(table(:,b),1),'constant').^2).*sum(detrend(X(table(:,b),2),'constant').^2)).^(1/2);
+        end
+        rPB = sort(rPB,1);
+        adj_nboot = nboot - sum(isnan(rPB));
+        low = round((alpha_level*adj_nboot)/2); % lower bound
+        high = adj_nboot - low; % upper bound
+        CIP = [rPB(low) rPB(high)];
+    end
 end
 
 
@@ -61,6 +72,23 @@ end
 if strcmpi(metric,'Concordance') || strcmpi(metric,'Both')
     S = cov(X,1); Var1 = S(1,1); Var2 = S(2,2); S = S(1,2);
     rC = (2.*S) ./ (Var1+Var2+((mean(X(:,1)-mean(X(:,2)).^2))));
+
+    if nargout > 1
+        disp('computing Concordance correlation CI')
+        if strcmpi(metric,'Concordance')
+            table = randi(n,n,nboot); % otherwise reuse the one from above = same sampling scheme
+        end
+        
+        for b=1:nboot
+            S = cov(X(table(:,b),:),1); Var1 = S(1,1); Var2 = S(2,2); S = S(1,2);
+            rCB(b) = (2.*S) ./ (Var1+Var2+((mean(X(table(:,b),1)-mean(X(table(:,b),2)).^2))));
+        end
+        rCB = sort(rCB,1);
+        adj_nboot = nboot - sum(isnan(rCB));
+        low = round((alpha_level*adj_nboot)/2); % lower bound
+        high = adj_nboot - low; % upper bound
+        CIC = [rCB(low) rCB(high)];
+    end
 end
 
 %% figure
