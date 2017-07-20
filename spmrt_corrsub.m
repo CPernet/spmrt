@@ -126,7 +126,7 @@ if N > 1
 end
 
 %% data viz
-if sum(binary_test) == 0 &&  N == 4
+if (sum(binary_test) == 3) + (N == 4) == 2
    tricolors = [0 0 1; 1 0 0; 0 1 0];
    
     if strcmpi(metric,'Pearson') || strcmpi(metric,'Both')
@@ -154,7 +154,7 @@ if sum(binary_test) == 0 &&  N == 4
             if tc == 1
                 title(['Whole image corr =' num2str(rP(tc))],'FontSize',12);
             elseif tc == 2
-                title(['Grey matter corr =' num2str(rPtc))],'FontSize',12);
+                title(['Grey matter corr =' num2str(rP(tc))],'FontSize',12);
             elseif tc == 3
                 title(['White matter corr =' num2str(rP(tc))],'FontSize',12);
             else
@@ -198,7 +198,33 @@ if sum(binary_test) == 0 &&  N == 4
     end
 else
     if strcmpi(metric,'Both')
-        
+        answer=questdlg('Plot concordance corr or Pearson''s corr?','Plotting option','Concordance','Pearson','Concordance');
+    else
+        answer = metric;
     end
-    tissue_reliability(Data,GM,WM,CSF)
+    
+    if strcmpi(answer,'concordance')
+        Data = [[CIC(2,:,1); rC(2,:); CIC(2,:,2)]; ...
+                [CIC(3,:,1); rC(3,:); CIC(3,:,2)]; ...
+                [CIC(4,:,1); rC(4,:); CIC(4,:,2)]];
+         
+    elseif strcmpi(answer,'pearson')
+        Data = [[CIP(2,:,1); rP(2,:); CIP(2,:,2)]; ...
+                [CIP(3,:,1); rP(3,:); CIP(3,:,2)]; ...
+                [CIP(4,:,1); rP(4,:); CIP(4,:,2)]];
+         
+    end
+    
+    % get the data + tissue values and coordinates
+    [GM,x,y,z,M] = spmrt_getdata(image1,image2,masks(2,:));
+    GM = [GM x y z M];
+    
+    [WM,x,y,z,M] = spmrt_getdata(image1,image2,masks(3,:));
+    WM = [WM x y z M];
+    
+    [CSF,x,y,z,M] = spmrt_getdata(image1,image2,masks(4,:));
+    CSF = [CSF x y z M];
+    
+    % now pass this info to the figure GUI
+    spmrt_tissue_reliability(Data,GM,WM,CSF)
 end

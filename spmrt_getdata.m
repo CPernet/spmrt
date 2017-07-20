@@ -1,4 +1,4 @@
-function X = spmrt_getdata(image1,image2,mask,threshold)
+function [X,x,y,z,M] = spmrt_getdata(image1,image2,mask,threshold)
 
 % routine to read data from image1 and image2 inside the mask (above threshold)
 %
@@ -35,6 +35,18 @@ end
 %% Get the data
 [x,y,z] = ind2sub(M.dim,find(mask));
 X = [spm_get_data(V1,[x y z]'); spm_get_data(V2,[x y z]')]';
-X(isnan(X(:,1)),:) = []; % clean up if needed
-X(isnan(X(:,2)),:) = [];
+if nargout == 5
+    M = spm_get_data(M,[x y z]')';
+end
+
+% clean up if needed
+C = unique([find(isnan(X(:,1))) ; find(isnan(X(:,2)))]);
+if ~isempty(C)
+    X(C,:) = [];
+    M(C) = [];
+    x(C) = [];
+    y(C) = [];
+    z(C) = [];
+end
+
 
