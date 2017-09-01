@@ -11,12 +11,14 @@ function [X,x,y,z,M] = spmrt_getdata(image1,image2,mask,threshold)
 %       threshold (optional) if mask is not binary, threshold to apply
 %
 % OUTPUT X is a [N voxels by 2] matrix (with NaN removed if any)
+%        x,y,z are the voxel coordinates data are read from
+%        M is a N voxels vector of values from the mask image
 %
 % Cyril Pernet
 % --------------------------------------------------------------------------
 % Copyright (C) spmrt 
 
-
+ 
 V1 = spm_vol(image1);
 V2 = spm_vol(image2);
 if any(V1.dim ~= V2.dim)
@@ -43,10 +45,12 @@ end
 C = unique([find(isnan(X(:,1))) ; find(isnan(X(:,2)))]);
 if ~isempty(C)
     X(C,:) = [];
-    M(C) = [];
     x(C) = [];
     y(C) = [];
     z(C) = [];
+    if ~isstruct(M)
+        M(C) = [];
+    end
 end
 
 
