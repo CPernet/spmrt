@@ -111,8 +111,7 @@ if N > 1
             else, M = masks(tc,:); end
             for th=1:10 % for each threshold of the mask
                 fprintf('computing correlations for tissue class %g threshold %g \n',tc-1,th/10-0.1)
-                [tmpP,tmpC,tmpcip,tmpcic]=spmrt_corr(image1,image2,M,metric,0,th/10-0.1,0.005);
-                
+                [tmpP,tmpC,tmpcip,tmpcic]=spmrt_corr(image1,image2,M,metric,0,th/10-0.1,0.005); % <-- note the adjustment for multiple comparisons 0.005
                 if strcmpi(metric,'Pearson') || strcmpi(metric,'Both')
                     rP(tc,th) = tmpP; CIP(tc,th,1) = tmpcip(1); CIP(tc,th,2) = tmpcip(2);
                 end
@@ -126,7 +125,10 @@ if N > 1
 end
 
 %% data viz
-if (sum(binary_test) == 3) + (N == 4) == 2
+
+if (sum(binary_test) == 3) + (N == 4) == 2 
+   % for binary masks, simply plot data for all brain and tissue types
+   % ----------------------------------------------------------------
    tricolors = [0 0 1; 1 0 0; 0 1 0];
    
     if strcmpi(metric,'Pearson') || strcmpi(metric,'Both')
@@ -197,6 +199,8 @@ if (sum(binary_test) == 3) + (N == 4) == 2
         end
     end
 else
+   % for probability masks, plot data interactively depending on maks threshold
+   % --------------------------------------------------------------------------
     if strcmpi(metric,'Both')
         answer=questdlg('Plot concordance corr or Pearson''s corr?','Plotting option','Concordance','Pearson','Concordance');
     else

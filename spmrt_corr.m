@@ -51,10 +51,10 @@ n = size(X,1);
 if strcmpi(metric,'Pearson') || strcmpi(metric,'Both')
     rP = sum(detrend(X(:,1),'constant').*detrend(X(:,2),'constant')) ./ ...
         (sum(detrend(X(:,1),'constant').^2).*sum(detrend(X(:,2),'constant').^2)).^(1/2);
-   
+    
     if nargout > 1
-        disp('computing Pearson''s CI')
-        table = randi(n,n,nboot); 
+        disp('computing Pearson''s CI');
+        table = randi(n,n,nboot);
         for b=1:nboot
             rPB(b) = sum(detrend(X(table(:,b),1),'constant').*detrend(X(table(:,b),2),'constant')) ./ ...
                 (sum(detrend(X(table(:,b),1),'constant').^2).*sum(detrend(X(table(:,b),2),'constant').^2)).^(1/2);
@@ -63,7 +63,11 @@ if strcmpi(metric,'Pearson') || strcmpi(metric,'Both')
         adj_nboot = nboot - sum(isnan(rPB));
         low = round((alpha_level*adj_nboot)/2); % lower bound
         high = adj_nboot - low; % upper bound
+        rPB(isnan(rPB)) = [];
         CIP = [rPB(low) rPB(high)];
+        if rP<CIP(1) && rP>CIP(2)
+            CIP = [rPB(high) rPB(low)];
+        end
     end
 end
 
@@ -72,9 +76,9 @@ end
 if strcmpi(metric,'Concordance') || strcmpi(metric,'Both')
     S = cov(X,1); Var1 = S(1,1); Var2 = S(2,2); S = S(1,2);
     rC = (2.*S) ./ (Var1+Var2+((mean(X(:,1)-mean(X(:,2)).^2))));
-
+    
     if nargout > 1
-        disp('computing Concordance correlation CI')
+        disp('computing Concordance correlation CI');
         if strcmpi(metric,'Concordance')
             table = randi(n,n,nboot); % otherwise reuse the one from above = same sampling scheme
         end
@@ -87,7 +91,11 @@ if strcmpi(metric,'Concordance') || strcmpi(metric,'Both')
         adj_nboot = nboot - sum(isnan(rCB));
         low = round((alpha_level*adj_nboot)/2); % lower bound
         high = adj_nboot - low; % upper bound
+        rCB(isnan(rCB)) = [];
         CIC = [rCB(low) rCB(high)];
+        if  rC<CIC(1) && rC>CIC(2)
+            CIC = [rCB(high) rCB(low)];
+        end
     end
 end
 

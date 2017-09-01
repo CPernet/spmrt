@@ -22,7 +22,7 @@ function [W,B,Maps,Stats] = spmrt_corrgp(series1,series2,masks,threshold,covaria
 %       threshold (optional) if masks are not binary, threshold to apply
 %
 % output W are the within pairs correlations (Pearson and Concordance)
-%        B are the within pairs correlations (Pearson and Concordance)
+%        B are the between pairs correlations (Pearson and Concordance)
 %        Maps filenames of the within and between subject maps
 %        Stats is structure with mean and medians (with percentille
 %        bootstrap 95% CI - to read column-wise) of within, and between 
@@ -49,7 +49,8 @@ if size(masks,1) == 1
 end
 
 %% do the within loop
-N = size(series1,1); W = nan(N,2); 
+N = size(series1,1); 
+W = nan(N,2); % <--  within pairs correlations
 for n=1:N
     fprintf('Computing within pairs correlations: pair %g/%g \n',n,N)
     [W(n,1),W(n,2)]=spmrt_corr(series1(n,:),series2(n,:),masks(n,:),'both',figout,threshold);
@@ -70,7 +71,8 @@ end
 
 %% do the between loop
 combinations = nchoosek([1:size(series1,1)],2);
-MP = NaN(N,N); MC = NaN(N,N); 
+B = nan(N,2); % <-- between pairs correlations
+MP = NaN(N,N); MC = NaN(N,N); % <-- corr matrices (Pearson / Concordance) for all pairs
 for n=1:length(combinations)
     fprintf('Computing between pairs correlations: pair %g/%g \n',n,length(combinations))    
     [MP(combinations(n,1),combinations(n,2)),MC(combinations(n,1),combinations(n,2))] = spmrt_corr(...
@@ -78,7 +80,7 @@ for n=1:length(combinations)
     MP(combinations(n,2),combinations(n,1)) = MP(combinations(n,1),combinations(n,2));
     MC(combinations(n,2),combinations(n,1)) = MC(combinations(n,1),combinations(n,2));
 end
-B = [nanmean(MP,2) nanmean(MC,2)];
+B = [nanmean(MP,2) nanmean(MC,2)]; % <-- for a given image, average corr to all others
 
 
 %% make map
