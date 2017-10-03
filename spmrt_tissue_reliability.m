@@ -12,11 +12,12 @@ function varargout = spmrt_tissue_reliability(varargin)
 %            make correlation curves for different thresholds of the tissue
 %            maps - row are order as low CI, corr, high CI and repeated for
 %            tissue types 
-%       GM is a n*6 matrix with values of image1, image2, x, y, z and
-%          tissue values - this last column is used to vixualize at different
-%          thresholds (matching m in Data)
-%       WM is simular the GM
-%       CSF is similar to GM
+%       tissue_values a cell array containing n*6 matrices for
+%           GM is a n*6 matrix with values of image1, image2, x, y, z and
+%               tissue values - this last column is used to vixualize at different
+%               thresholds (matching m in Data)
+%           WM is simular the GM
+%           CSF is similar to GM
 %
 % Cyril Pernet
 % --------------------------------------------------------------------------
@@ -47,9 +48,9 @@ function spmrt_tissue_reliability_OpeningFcn(hObject, ~, handles, varargin)
 global handles
 
 handles.data    = varargin{1};
-handles.GM      = varargin{2};
-handles.WM      = varargin{3};
-handles.CSF     = varargin{4};
+handles.GM      = varargin{2}{1};
+handles.WM      = varargin{3}{2};
+handles.CSF     = varargin{4}{3};
 handles.showGM  = 1;
 handles.showWM  = 1;
 handles.showCSF = 1;
