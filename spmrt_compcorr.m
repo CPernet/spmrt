@@ -201,7 +201,7 @@ if figout == 1
             'FaceColor',[0.5 0.5 1],'EdgeColor',[0 0 0], ...
             'FaceAlpha',0.9,'EdgeAlpha',1); grid on; box on
         xlabel('differences','FontSize',12); ylabel('Freq.','FontSize',12)
-        title(sprintf('Differences in Pearsons'' corr \n %g CI [%g %g]',rC1-rC2, CIC(1),CIC(2)),'Fontsize',12)
+        title(sprintf('Differences in Concordance corr \n %g CI [%g %g]',rC1-rC2, CIC(1),CIC(2)),'Fontsize',12)
     end
 end
 
