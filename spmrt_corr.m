@@ -1,13 +1,14 @@
-function [rP,rC,CIP,CIC]=spmrt_corr(image1,image2,mask,metric,figout,threshold,alpha_level)
+function [rP,CIP,rC,CIC]=spmrt_corr(image1,image2,mask,metric,figout,threshold,alpha_level)
 
 % Computes the Pearson (vector-wise) and concordance correlations
 % between image1 and image2 for data included in the mask
 %
 % FORMAT [rP,rC,CIP,CIC]=spmup_corr(image1,image1,'both',mask,threshold,alpha_level)
 %        [rP,CIP]=spmup_corr(image1,image1,'Pearson',mask,threshold,alpha_level)
-%        [rC,CIC]=spmup_corr(image1,image1,'Concordance',mask,threshold,alpha_level)
+%        [~,~,rC,CIC]=spmup_corr(image1,image1,'Concordance',mask,threshold,alpha_level)
 %
-% INPUT image1 is the filename of an image (see spm_select)
+% INPUT if no input the user is prompted
+%       image1 is the filename of an image (see spm_select)
 %       image2 is the filename of an image (see spm_select)
 %       mask   is the filename of a mask in same space as image1 and image2
 %       metric is 'Pearson', 'Concordance', or 'both'
@@ -35,7 +36,7 @@ nboot = 1000; % a thousand bootstraps
 
 %% check inputs
 spm('defaults', 'FMRI');
-if nargin < 7; alpha_level = 5/100; end 
+if nargin < 7; threshold = []; alpha_level = 5/100; end 
 if nargin < 5; figout = 0; end 
 if nargin < 4; metric = 'both'; end
 
@@ -49,7 +50,7 @@ if nargin == 0
 end
 
 %% Get the data
-if exist('threshold','var')
+if exist('threshold','var') && ~isempty(threshold)
     X = spmrt_getdata(image1,image2,mask,threshold);
 else
     X = spmrt_getdata(image1,image2,mask);
@@ -62,24 +63,25 @@ end
 
 %% Pearson correlation
 if strcmpi(metric,'Pearson') || strcmpi(metric,'Both')
-    rP = sum(detrend(X(:,1),'constant').*detrend(X(:,2),'constant')) ./ ...
-        (sum(detrend(X(:,1),'constant').^2).*sum(detrend(X(:,2),'constant').^2)).^(1/2);
+    rP = nansum(detrend(X(:,1),'constant').*detrend(X(:,2),'constant')) ./ ...
+        (nansum(detrend(X(:,1),'constant').^2).*nansum(detrend(X(:,2),'constant').^2)).^(1/2);
     
     if nargout > 1
-        disp('computing Pearson''s CI');
-        table = randi(n,n,nboot);
-        for b=1:nboot
-            rPB(b) = nansum(detrend(X(table(:,b),1),'constant').*detrend(X(table(:,b),2),'constant')) ./ ...
-                (nansum(detrend(X(table(:,b),1),'constant').^2).*nansum(detrend(X(table(:,b),2),'constant').^2)).^(1/2);
-        end
-        rPB = sort(rPB,1);
-        adj_nboot = nboot - sum(isnan(rPB));
-        low = round((alpha_level*adj_nboot)/2); % lower bound
-        high = adj_nboot - low; % upper bound
-        rPB(isnan(rPB)) = [];
-        CIP = [rPB(low) rPB(high)];
-        if rP<CIP(1) && rP>CIP(2)
-            CIP = [rPB(high) rPB(low)];
+        disp('computing Pearson''s CI'); go = 1;
+        while go == 1
+            table = randi(n,n,nboot);
+            rPB = nansum(detrend(reshape(X(table,1),[n nboot]),'constant').*detrend(reshape(X(table,2),[n nboot]),'constant')) ./ ...
+                (nansum(detrend(reshape(X(table,1),[n nboot]),'constant').^2).*nansum(detrend(reshape(X(table,2),[n nboot]),'constant').^2)).^(1/2);
+            
+            rPB = sort(rPB);
+            rPB(isnan(rPB)) = [];
+            adj_nboot = length(rPB);
+            low = round((alpha_level*adj_nboot)/2); % lower bound
+            high = adj_nboot - low; % upper bound
+            CIP = [rPB(low) rPB(high)];
+            if rP>CIP(1) && rP<CIP(2)
+                go = 0; % this can happen that resampling is weird and rp not in the bounds
+            end
         end
     end
 end
@@ -91,23 +93,25 @@ if strcmpi(metric,'Concordance') || strcmpi(metric,'Both')
     rC = (2.*S) ./ (Var1+Var2+((mean(X(:,1)-mean(X(:,2)).^2))));
     
     if nargout > 1
-        disp('computing Concordance correlation CI');
-        if strcmpi(metric,'Concordance')
-            table = randi(n,n,nboot); % otherwise reuse the one from above = same sampling scheme
-        end
-        
-        for b=1:nboot
-            S = cov(X(table(:,b),:),1); Var1 = S(1,1); Var2 = S(2,2); S = S(1,2);
-            rCB(b) = (2.*S) ./ (Var1+Var2+((mean(X(table(:,b),1)-mean(X(table(:,b),2)).^2))));
-        end
-        rCB = sort(rCB,1);
-        adj_nboot = nboot - sum(isnan(rCB));
-        low = round((alpha_level*adj_nboot)/2); % lower bound
-        high = adj_nboot - low; % upper bound
-        rCB(isnan(rCB)) = [];
-        CIC = [rCB(low) rCB(high)];
-        if  rC<CIC(1) && rC>CIC(2)
-            CIC = [rCB(high) rCB(low)];
+        disp('computing Concordance correlation CI'); go = 1;
+        while go == 1
+            if strcmpi(metric,'Concordance')
+                table = randi(n,n,nboot); % otherwise reuse the one from above = same sampling scheme
+            end
+            
+            for b=1:nboot
+                S = cov(X(table(:,b),:),1); Var1 = S(1,1); Var2 = S(2,2); S = S(1,2);
+                rCB(b) = (2.*S) ./ (Var1+Var2+((mean(X(table(:,b),1)-mean(X(table(:,b),2)).^2))));
+            end
+            rCB = sort(rCB);
+            adj_nboot = nboot - sum(isnan(rCB));
+            low = round((alpha_level*adj_nboot)/2); % lower bound
+            high = adj_nboot - low; % upper bound
+            rCB(isnan(rCB)) = [];
+            CIC = [rCB(low) rCB(high)];
+            if  rC>CIC(1) && rC<CIC(2)
+                go = 0;
+            end
         end
     end
 end
