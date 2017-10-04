@@ -5,7 +5,8 @@ function [rP,CIP,rC,CIC] = spmrt_corrsub(image1, image2, masks, metric)
 %
 % FORMAT [rP,CIP,rC,CIC]=spmrt_corrsub(image1,image1,masks)
 %
-% INPUT image1 is the filename of an image (see spm_select)
+% INPUT if no input the user is prompted
+%       image1 is the filename of an image (see spm_select)
 %       image2 is the filename of an image (see spm_select)
 %       masks is a cell array of filename of masks in same space as image1 and image2
 %             the assumption for masks that the 1st filename is the full
