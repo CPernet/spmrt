@@ -12,6 +12,10 @@ function [image1,image2,masks]=spmrt_pickupfiles
 % --------------------------------------------------------------------------
 % Copyright (C) spmrt 
 
+image1 = [];
+image2 = [];
+masks  = [];
+
 
 [image1,sts] = spm_select(1,'image','select 1st image',{},pwd,'.*',1);
 if sts == 0
