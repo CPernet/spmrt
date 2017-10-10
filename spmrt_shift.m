@@ -6,7 +6,7 @@ function [xd yd delta deltaCI] = spmrt_shift(image1,image2,mask,plotshift,thresh
 % reliable than others (for instance all low values can be the same but not
 % hight ones)
 %
-% FORMAT xd yd delta deltaCI] = spmrt_shift(image1,image2,mask,plotshift,threshold)
+% FORMAT [xd yd delta deltaCI] = spmrt_shift(image1,image2,mask,plotshift,threshold)
 %
 % INPUT if no input the user is prompted
 %       threshold (optional) if mask is not binary, threshold to apply

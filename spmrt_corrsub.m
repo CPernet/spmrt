@@ -52,7 +52,7 @@ else
 end
 disp('whole brain analysis')
 
-[rP,rC,CIP,CIC]=spmrt_corr(image1,image2,M,metric); % call spmrt_corr
+[rP,CIP,rC,CIC]=spmrt_corr(image1,image2,M,metric); % call spmrt_corr
 disp('--------------------')
 
 
@@ -100,7 +100,7 @@ if N > 1 % size(masks,2)
                 M = masks(tc,:); 
             end
             fprintf('computing correlations for tissue class %g\n',tc-1)
-            [tmpP,tmpC,tmpcip,tmpcic]=spmrt_corr(image1,image2,M,metric);
+            [tmpP,tmpcip,tmpC,tmpcic]=spmrt_corr(image1,image2,M,metric);
             
             if strcmpi(metric,'Pearson') || strcmpi(metric,'Both')
                 rP(tc,1) = tmpP; CIP(tc,:) = tmpcip;
@@ -134,7 +134,7 @@ if N > 1 % size(masks,2)
             
             for th=1:10 % for each threshold of the mask
                 fprintf('computing correlations for tissue class %g threshold %g \n',tc-1,th/10-0.1)
-                [tmpP,tmpC,tmpcip,tmpcic]=spmrt_corr(image1,image2,M,metric,0,th/10-0.1,0.005); % <-- note the adjustment for multiple comparisons 0.005
+                [tmpP,tmpcip,tmpC,tmpcic]=spmrt_corr(image1,image2,M,metric,0,th/10-0.1,0.005); % <-- note the adjustment for multiple comparisons 0.005
                 if strcmpi(metric,'Pearson') || strcmpi(metric,'Both')
                     rP(tc,th) = tmpP; CIP(tc,th,1) = tmpcip(1); CIP(tc,th,2) = tmpcip(2);
                 end

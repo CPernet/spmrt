@@ -53,7 +53,7 @@ N = size(series1,1);
 W = nan(N,2); % <--  within pairs correlations
 for n=1:N
     fprintf('Computing within pairs correlations: pair %g/%g \n',n,N)
-    [W(n,1),W(n,2)]=spmrt_corr(series1(n,:),series2(n,:),masks(n,:),'both',figout,threshold);
+    [W(n,1),~,W(n,2),~]=spmrt_corr(series1(n,:),series2(n,:),masks(n,:),'both',figout,threshold);
 end
 
 %% make map
@@ -75,7 +75,7 @@ B = nan(N,2); % <-- between pairs correlations
 MP = NaN(N,N); MC = NaN(N,N); % <-- corr matrices (Pearson / Concordance) for all pairs
 for n=1:length(combinations)
     fprintf('Computing between pairs correlations: pair %g/%g \n',n,length(combinations))    
-    [MP(combinations(n,1),combinations(n,2)),MC(combinations(n,1),combinations(n,2))] = spmrt_corr(...
+    [MP(combinations(n,1),combinations(n,2)),~,MC(combinations(n,1),combinations(n,2)),~] = spmrt_corr(...
         series1(combinations(n,1),:),series2(combinations(n,2),:),masks(combinations(n,1),:),'both',figout,threshold);
     MP(combinations(n,2),combinations(n,1)) = MP(combinations(n,1),combinations(n,2));
     MC(combinations(n,2),combinations(n,1)) = MC(combinations(n,1),combinations(n,2));
