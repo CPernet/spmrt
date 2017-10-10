@@ -82,32 +82,27 @@ end
 
 % check which voxels are in common in each decile
 
-V1 = spm_vol(image1);
-V2 = spm_vol(image2);
- 
+V1 = spm_vol(image1); A = spm_read_vols(V1); fnameA = V1.fname(1:end-4);
+V2 = spm_vol(image2); B = spm_read_vols(V2); fnameB = V2.fname(1:end-4);
+mask = spm_read_vols(spm_vol(mask));
 
 for d=1:10
-    [xA,yA,zA] = ind2sub(V1.dim,find((A<=xd(d))));
-    [xB,yB,zB] = ind2sub(V2.dim,find((B<=yd(d))));
-    [xC,yC,zC] = ind2sub(V2.dim,find(((A<=xd(d)) + (B<=yd(d)))==2));
-    % write an image of this
-    W = V1; W.fname = [pwd filesep 'decile_' num2str(d) '.nii'];
-    W.descrip = [num2str(d) 'decile from a shift function analysis'];
-    W.private.descrip = W.descrip;
-    data = zeros(W.dim);
-    data(xA,yA,zA) = 80;
-    data(xB,yB,zB) = 160;
-    data(xC,yC,zC) = 240;
-    spm_write_vol(W,data)
-
-    if d == 1
-        find((A<=xd(d))
-        
-    elseif d = 10
-            
+    if d ==1
+        A2 = (A.*(A<=xd(d))).*mask;
+        B2 = (B.*(B<=yd(d))).*mask;
+    elseif d == 10
+        A2 = (A.*(A>xd(d-1))).*mask;
+        B2 = (B.*(B>yd(d-1))).*mask;
     else
-            
+        A2 = (A.*(A>xd(d-1)).*(A<=xd(d))).*mask;
+        B2 = (B.*(B>yd(d-1)).*(B<=yd(d))).*mask;
     end
+    V1.fname = [fnameA '_decile_' num2str(d) '.nii'];
+    V1.descrip = [num2str(d) ' decile '];
+    spm_write_vol(V1,A2);
+    V2.fname = [fnameB '_decile_' num2str(d) '.nii'];
+    V2.descrip = [num2str(d) ' decile '];
+    spm_write_vol(V2,B2);
 end
 
 
