@@ -1,6 +1,6 @@
 function [xd yd delta deltaCI] = spmrt_shift(image1,image2,mask,plotshift,threshold)
 
-% Implementation of thr shift function analysis for dependent measures.
+% Implementation of the shift function analysis for dependent measures.
 % It compares the distributions of voxels between two images (within in a maks)
 % and then check the spatial location of those - this tells if some deciles are more
 % reliable than others (for instance all low values can be the same but not
@@ -12,7 +12,7 @@ function [xd yd delta deltaCI] = spmrt_shift(image1,image2,mask,plotshift,thresh
 %       threshold (optional) if mask is not binary, threshold to apply
 %
 % OUTPUT xd and yd are the Harell-Davis estimators (decile) of each image
-%        delta and deltaCI the result of the shif function
+%        delta and deltaCI the result of the shift function
 %        -- images are also writen on the drive for each decile
 %
 % Cyril Pernet
@@ -80,7 +80,7 @@ for d=1:9
    deltaCI(d,2) = yd(d)-xd(d)+c.*delta_bse;
 end
 
-% check which voxels are in common in each decile
+%% check which voxels are in common in each decile
 
 V1 = spm_vol(image1); A = spm_read_vols(V1); fnameA = V1.fname(1:end-4);
 V2 = spm_vol(image2); B = spm_read_vols(V2); fnameB = V2.fname(1:end-4);
@@ -108,7 +108,7 @@ end
 
   
 %% figure
-if strcmpi('plotshift','yes')
+if strcmpi(plotshift,'yes')
     figure('Name','Shit function between image voxel values');set(gcf,'Color','w');
     plot(xd,delta,'ko'); hold on
     fillhandle=fill([xd fliplr(xd)],[deltaCI(:,1)' fliplr(deltaCI(:,2)')],[1 0 0]);
