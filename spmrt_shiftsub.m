@@ -1,4 +1,4 @@
-function [xd yd delta deltaCI] = spmrt_shiftsub(pair1,pair2,mask,plotshift,threshold)
+function [xd, yd, delta, deltaCI] = spmrt_shiftsub(pair1,pair2,mask,plotshift,threshold)
 
 % Compare pairs of test-retest images using a shift function analysis for dependent measures.
 % For each pair, we compute the difference image, which tells how much different in each voxel.
