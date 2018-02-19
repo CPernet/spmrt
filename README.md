@@ -18,7 +18,7 @@ Having only two images, incertainty is computed by [bootstrapping](https://en.wi
 
 ## Group level reliability
 
-There are many ways test-retest reliability can be computed: from the raw measurement to the thresholded maps (see e.g. Gorgolewski et al 2013 Single subject fMRI test-retest reliability metrics and confounding factors [NeuroImage, 69](https://www.ncbi.nlm.nih.gov/pubmed/23153967)). The toolbox this provides an array of tools to do just that: raw data, t or F value maps, and thresholded maps.
+There are many ways test-retest reliability can be computed: from the raw measurement to the thresholded maps (see e.g. Gorgolewski et al 2013 Single subject fMRI test-retest reliability metrics and confounding factors [NeuroImage, 69](https://www.ncbi.nlm.nih.gov/pubmed/23153967)). The toolbox provides an array of tools to do just that: raw data, t or F value maps, and thresholded maps.
 
 ### Reliability of 'raw' data
 
