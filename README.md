@@ -28,7 +28,11 @@ _Note on time series: while for individual images, correlations are computed amo
 
 ### Reliability of statistical images
 
-[to do]
+We use here two different approaches, the mean square difference between images and Intra Class Correlation (ICC); the two methods being related to each other.
+
+_Mean square difference:_ this is equivalent to the between session component of the ICC. For each voxel, take the square diffence, then average over all voxels. The statistic derived from that is the same as for raw data, i.e. compare the within subjects vs between subjects values using a percentile bootsrrap - if data are reliable, within subjects is expected to be significantly better than between subjects.
+
+_ICC_: implement the ICC(3,1) as in [Shrout & Fleiss (1979)](https://www.ncbi.nlm.nih.gov/pubmed/18839484) computed from a repeted measure ANOVA. The ANOVA allows to the get SS subjects and SS of repeating the measurement. Under the assumption that SS total = SS subjects + SS effect + SS between subjects, we can derive the ICC as ((MS between-MS within) ./ (MS between + df * MS within)). Whilst ICC is not typically associated with a test of significance, this can be obtained easily by shuffling subjects. This allows deriving a null distribution since the within and between subjects should be equivalent and from the null threshold the observed ICC values.
 
 ### Reliability of thresholded images
 
