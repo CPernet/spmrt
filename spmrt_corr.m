@@ -89,8 +89,23 @@ end
 
 %% Concordance
 if strcmpi(metric,'Concordance') || strcmpi(metric,'Both')
-    S = cov(X,1); Var1 = S(1,1); Var2 = S(2,2); S = S(1,2);
-    rC = (2.*S) ./ (Var1+Var2+((mean(X(:,1)-mean(X(:,2)).^2))));
+    S = cov(X,1); 
+    ybar = mean(X);
+    
+    shiftC = (ybar(1)-ybar(2))/(sqrt(sqrt(S(1,1))*sqrt(S(2,2)))); 
+    scaleC = sqrt(S(1,1))/sqrt(S(2,2));              
+    biasFactorC = ((scaleC+1/scaleC+shiftC^2)/(2))^-1;
+    
+
+    Var1 = S(1,1); Var2 = S(2,2); S = S(1,2);
+    rC = (2.*S) ./ ( Var1 +Var2 + (ybar(1)-ybar(2))^2);
+    
+    % Assign these values to the caller workspace 
+    
+    assignin('caller','shiftC',shiftC);
+    assignin('caller','scaleC',scaleC);
+    assignin('caller','biasFactorC',biasFactorC);
+   
     
     if nargout > 1
         disp('computing Concordance correlation CI'); go = 1;
@@ -98,10 +113,10 @@ if strcmpi(metric,'Concordance') || strcmpi(metric,'Both')
             if strcmpi(metric,'Concordance')
                 table = randi(n,n,nboot); % otherwise reuse the one from above = same sampling scheme
             end
-            
+            rCB = zeros(1,nboot);
             for b=1:nboot
                 S = cov(X(table(:,b),:),1); Var1 = S(1,1); Var2 = S(2,2); S = S(1,2);
-                rCB(b) = (2.*S) ./ (Var1+Var2+((mean(X(table(:,b),1)-mean(X(table(:,b),2)).^2))));
+                rCB(b) = (2.*S) ./ ( Var1 +Var2 + (mean(X(table(:,b),1))-mean(X(table(:,b),2)))^2);
             end
             rCB = sort(rCB);
             adj_nboot = nboot - sum(isnan(rCB));
@@ -123,16 +138,36 @@ if figout == 1
     
     scatter(X(:,1),X(:,2),50); grid on          % plot pairs of observations
     xlabel('img1','FontSize',14); ylabel('img2','FontSize',14); % label
-    h=lsline; set(h,'Color','r','LineWidth',4); % add the least square line
     box on; set(gca,'Fontsize',14); axis square; hold on
-    v = axis; plot([v(1):[(v(2)-v(1))/10]:v(2)],[v(3):[(v(4)-v(3))/10]:v(4)],'r','LineWidth',2);  % add diagonal
-
-        if strcmpi(metric,'Pearson')
+    v = axis;
+    
+    
+    if strcmp(metric,'Pearson') || strcmp(metric,'both') 
+    h=lsline; set(h,'Color','b','LineWidth',4); % add the least square line
+    end
+    
+    if strcmp(metric,'Concordance') || strcmp(metric,'both') 
+    idxMax  = find(v==max(abs(v)));
+    idxMin  = find(v==min(abs(v)));
+    identity = v(idxMin):v(idxMax);
+    idplot = plot(identity,identity,'k--','LineWidth',2);  % Identity line 
+    concplot = plot(identity,identity*scaleC + shiftC,'r','LineWidth',4);
+    end
+    
+    
+   
+    if strcmpi(metric,'Pearson')
         title(['Pearson corr =' num2str(rP)],'FontSize',16);
+       legend(h, ...
+       {'Pearson'});
     elseif strcmpi(metric,'Concordance')
-        title(['Concordance corr =' num2str(rC)],'FontSize',16);
+        title(['Concordance corr =' num2str(rC) 'Bias factor: ' num2str(biasFactorC)],'FontSize',16);
+        legend([idplot,concplot], ...
+       {'Identity Line', 'Concordance'});
     else
-        title(sprintf('Pearson corr =%g \n Concordance corr =%g', rP,rC),'FontSize',16);
+        title(sprintf('Pearson corr =%g \n Concordance corr =%g Bias factor=%g ', rP,rC,biasFactorC),'FontSize',16);
+        legend([idplot,concplot,h], ...
+       {'Identity Line', 'Concordance','Pearson'});
     end
 end
 

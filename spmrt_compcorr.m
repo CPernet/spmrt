@@ -1,5 +1,4 @@
 function [CIP,pP,CIC,pC]=spmrt_compcorr(pair1,pair2,mask,metric,figout,threshold,alpha_level)
-
 % Implementation of a percentile bootstrap of the difference of correlation
 % for dependent measures - think of comparing the reliability (corr) of two MRI
 % sequences or two paradigms.
@@ -29,9 +28,29 @@ function [CIP,pP,CIC,pC]=spmrt_compcorr(pair1,pair2,mask,metric,figout,threshold
 % --------------------------------------------------------------------------
 % Copyright (C) spmrt
 
-diffP = []; CIP = [];
-diffC = []; CIC = [];
+pC = []; CIP = [];
+pP = []; CIC = [];
 nboot = 1000; % a thousand bootstraps
+
+pn1 = pair1(1,:);
+lc = strfind(pn1,'.');
+lc2 = strfind(pn1,'/');
+inName11 = pn1(max(lc2)+1:max(lc)-1);
+
+pn2 = pair1(2,:);
+lc = strfind(pn2,'.');
+lc2 = strfind(pn2,'/');
+inName12 = pn2(max(lc2)+1:max(lc)-1);
+
+pn1 = pair2(1,:);
+lc = strfind(pn1,'.');
+lc2 = strfind(pn1,'/');
+inName21 = pn1(max(lc2)+1:max(lc)-1);
+
+pn2 = pair2(2,:);
+lc = strfind(pn2,'.');
+lc2 = strfind(pn2,'/');
+inName22 = pn2(max(lc2)+1:max(lc)-1);
 
 %% check inputs
 spm('defaults', 'FMRI');
@@ -110,17 +129,23 @@ end
 
 %% Concordance
 if strcmpi(metric,'Concordance') || strcmpi(metric,'Both')
-    
+
     if strcmpi(metric,'Concordance')
         table = randi(nx,nx,nboot); % otherwise reuse the one from above = same sampling scheme
     end
-    
+    bootdiffC = zeros(1,nboot);
     for b=1:nboot
+        
         S = cov(X(table(:,b),:),1); Var1 = S(1,1); Var2 = S(2,2); S = S(1,2);
-        r1 = (2.*S) ./ (Var1+Var2+((mean(X(table(:,b),1)-mean(X(table(:,b),2)).^2))));
+        ybar = mean(X(table(:,b),:));
+        r1 = (2.*S) ./ ( Var1 +Var2 + (ybar(1)-ybar(2))^2);
+       
         S = cov(Y(table(:,b),:),1); Var1 = S(1,1); Var2 = S(2,2); S = S(1,2);
-        r2 = (2.*S) ./ (Var1+Var2+((mean(Y(table(:,b),1)-mean(Y(table(:,b),2)).^2))));
+        ybar = mean(Y(table(:,b),:));
+        r2 = (2.*S) ./ ( Var1 +Var2 + (ybar(1)-ybar(2))^2);
         bootdiffC(b) = r1-r2;
+        
+        
     end
     
     bootdiffC = sort(bootdiffC,1);
@@ -145,45 +170,80 @@ if figout == 1
     [rP1,CIP1,rC1,CIC1] = spmrt_corr(pair1(1,:),pair1(2,:),mask,'both',0,threshold,alpha_level);
     if strcmpi(metric,'Pearson')
         subplot(1,3,1); 
-        mytitle = sprintf('Pearson corr =%g \n CI [%g %g]',rP1,CIP1(1),CIP1(2));
+        mytitle = sprintf('Pearson corr (blue) =%g \n CI [%g %g]',rP1,CIP1(1),CIP1(2));
     elseif strcmpi(metric,'Concordance')
          subplot(1,3,1); 
-        mytitle =  sprintf('Concordance corr =%g \n CI [%g %g]',rC1,CIC1(1),CIC1(2));
+        mytitle =  sprintf('Concordance corr (red) =%g \n CI [%g %g]',rC1,CIC1(1),CIC1(2));
     else
         subplot(4,3,[4 7]); 
-        mytitle = sprintf('Pearson corr =%g \n CI [%g %g] \n Concordance corr =%g \n CI [%g %g]',rP1,CIP1(1),CIP1(2),rC1,CIC1(1),CIC1(2));
+        mytitle = sprintf('Pearson corr (blue) =%g \n CI [%g %g] \n Concordance corr (red) =%g \n CI [%g %g]',rP1,CIP1(1),CIP1(2),rC1,CIC1(1),CIC1(2));
     end
     scatter(X(:,1),X(:,2),50); grid on % plot observations pair 1
-    xlabel('img1 pair1','FontSize',14); ylabel('img2 pair1','FontSize',14); % label
-    h=lsline; set(h,'Color','r','LineWidth',4); % add the least square line
+    xlabel(['pair1 ' inName11],'FontSize',14); ylabel(['pair1 ' inName12],'FontSize',14); % label
+    h=lsline; set(h,'Color','b','LineWidth',2); % add the least square line
     box on; set(gca,'Fontsize',12); axis square; hold on
-    v = axis; plot([v(1):[(v(2)-v(1))/10]:v(2)],[v(3):[(v(4)-v(3))/10]:v(4)],'r','LineWidth',2);  % add diagonal
+    
+    v = axis;
+    idxMax  = find(v==max(abs(v)));
+    idxMin  = find(v==min(abs(v)));
+    identity = v(idxMin):v(idxMax);
+    idplot = plot(identity,identity,'k--','LineWidth',2);  % Identity line % add diagonal
     title(mytitle,'Fontsize',12)
-        
+    
+    if strcmp(metric,'Concordance') || strcmp(metric,'both')
+    concplot = plot(identity,identity*scaleC + shiftC,'r','LineWidth',2);
+    end
+    
+    
     % right plot
     [rP2,CIP2,rC2,CIC2] = spmrt_corr(pair2(1,:),pair2(2,:),mask,'both',0,threshold,alpha_level);
     if strcmpi(metric,'Pearson')
         subplot(1,3,3); 
-        mytitle = sprintf('Pearson corr =%g \n CI [%g %g]',rP2,CIP2(1),CIP2(2));
+        mytitle = sprintf('Pearson corr (blue) =%g \n CI [%g %g]',rP2,CIP2(1),CIP2(2));
     elseif strcmpi(metric,'Concordance')
          subplot(1,3,3); 
-        mytitle =  sprintf('Concordance corr =%g \n CI [%g %g]',rC2,CIC2(1),CIC2(2));
+        mytitle =  sprintf('Concordance corr (red) =%g \n CI [%g %g]',rC2,CIC2(1),CIC2(2));
     else
         subplot(4,3,[6 9]); 
-        mytitle = sprintf('Pearson corr =%g \n CI [%g %g] \n Concordance corr =%g \n CI [%g %g]',rP2,CIP2(1),CIP2(2),rC2,CIC2(1),CIC2(2));
+        mytitle = sprintf('Pearson corr (blue) =%g \n CI [%g %g] \n Concordance corr (red) =%g \n CI [%g %g]',rP2,CIP2(1),CIP2(2),rC2,CIC2(1),CIC2(2));
     end
     scatter(Y(:,1),Y(:,2),50); grid on % plot observations pair 1
-    xlabel('img1 pair2','FontSize',14); ylabel('img2 pair2','FontSize',14); % label
-    h=lsline; set(h,'Color','r','LineWidth',4); % add the least square line
+    xlabel(['pair2 ' inName21],'FontSize',14); ylabel(['pair2 ' inName22],'FontSize',14); % label
+    h2=lsline; set(h2,'Color','b','LineWidth',2); % add the least square line
     box on; set(gca,'Fontsize',12); axis square; hold on
-    vv = axis; plot([vv(1):[(vv(2)-vv(1))/10]:vv(2)],[vv(3):[(vv(4)-vv(3))/10]:vv(4)],'r','LineWidth',2);  % add diagonal
+    vv = axis;
+    idxMax  = find(vv==max(abs(vv)));
+    idxMin  = find(vv==min(abs(vv)));
+    identity = vv(idxMin):vv(idxMax);
+    idplot = plot(identity,identity,'k--','LineWidth',2);  % Identity line % add diagonal
     title(mytitle,'Fontsize',12)
+    
+    if strcmp(metric,'Concordance') || strcmp(metric,'both')
+    concplot = plot(identity,identity*scaleC + shiftC,'r','LineWidth',2);
+    end
     
     % middle plot
     if strcmpi(metric,'Pearson')
         subplot(1,3,1);
+        subplot(4,3,[2 5]);
+        k = round(1 + log2(length(bootdiffP)));
+        [n,x]=hist(bootdiffP,k); h = x(2) - x(1);
+        bar(x,n/(length(bootdiffP)*h),1, ...
+            'FaceColor',[0.5 0.5 1],'EdgeColor',[0 0 0], ...
+            'FaceAlpha',0.9,'EdgeAlpha',1); grid on; box on
+        ylabel('Freq.','FontSize',12)
+        title(sprintf('Differences in Pearsons'' corr \n %g CI [%g %g]',rP1-rP2, CIP(1),CIP(2)),'Fontsize',12)
+    
     elseif strcmpi(metric,'Concordance')
         subplot(1,3,1);
+        subplot(4,3,[8 11]);
+        k = round(1 + log2(length(bootdiffC)));
+        [n,x]=hist(bootdiffC,k); h = x(2) - x(1);
+        bar(x,n/(length(bootdiffC)*h),1, ...
+            'FaceColor',[0.5 0.5 1],'EdgeColor',[0 0 0], ...
+            'FaceAlpha',0.9,'EdgeAlpha',1); grid on; box on
+        xlabel('differences','FontSize',12); ylabel('Freq.','FontSize',12)
+        title(sprintf('Differences in Concordance corr \n %g CI [%g %g]',rC1-rC2, CIC(1),CIC(2)),'Fontsize',12)
     else
         subplot(4,3,[2 5]);
         k = round(1 + log2(length(bootdiffP)));
